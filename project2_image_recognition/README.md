@@ -1,89 +1,170 @@
+# Project 2: Caltech-20 Image Recognition & Retrieval
 
-# Caltech‑20 Image Recognition – Programming Assignment 2 (Starter Code)
+This repository contains our implementation for **Programming Assignment 2** of a graduate-level Computer Vision course.  
+The project focuses on comparing **handcrafted features** and **deep learning–based representations** for both **image classification** and **image retrieval** tasks on the **Caltech-20** dataset.
 
-This repository follows the specification given in the assignment PDF.  
-It provides:
+Unlike a black-box pipeline, this implementation is designed to clearly expose each stage—feature extraction, model training, and evaluation—to facilitate analysis and comparison.
 
-* **4 feature extractors** – Bag‑of‑Words (BoW), BoW + Spatial Pyramid, VGG‑13, VGG‑19  
-* **3 classifiers** – Linear SVM, Random Forest, 2‑layer Fully‑Connected (PyTorch)  
-* Evaluation utilities for **image retrieval** and **classification + confusion matrices**.
+---
+
+## 🔍 What This Project Covers
+
+### Image Representations
+- **Bag-of-Visual-Words (BoW)** using SIFT
+- **BoW + Spatial Pyramid** (weak geometric encoding)
+- **VGG-13** deep features (pre-trained, frozen)
+- **VGG-19** deep features (pre-trained, frozen)
+
+### Classifiers
+- **Linear SVM**
+- **Random Forest**
+- **2-Layer Fully Connected Network** (PyTorch)
+
+### Evaluation Tasks
+- **Multi-class image classification**
+- **Image retrieval** (Top-k accuracy, mAP)
+- **Confusion matrix analysis**
 
 ---
 
 ## 1. Installation
 
+Install required dependencies using:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## 2. Dataset
+PyTorch is required only for the FC classifier.
+CNN backbones use pre-trained ImageNet weights and are not fine-tuned.
 
-Place the **Caltech‑20** folder (20 sub‑folders named *ant, beaver, …, saxophone*) anywhere on disk:
+---
 
-```
+## 2. Dataset Setup
+
+Prepare the **Caltech-20** dataset with the following directory structure:
+```text
 caltech20/
- ├── ant
- │   ├── image_0001.jpg
- │   └── ...
- ├── beaver
- └── ...
+├── ant
+│ ├── image_0001.jpg
+│ ├── image_0002.jpg
+│ └── ...
+├── beaver
+├── camera
+└── ...
 ```
 
-## 3. Quick start
+Each sub-folder corresponds to one object category, resulting in a total of **20 classes**.
 
-### Train & test every (feature, classifier) combination
+---
+
+## 3. Running Experiments
+
+### Run all feature–classifier combinations
 
 ```bash
-python src/main.py --root /path/to/caltech20  --all
-
-ex.
-python src/main.py --root /home/cvlab-dgx/project/seungjun/cv/caltech20/caltech20  --all
+python src/main.py --root /path/to/caltech20 --all
+```
+Example:
+```bash
+python src/main.py --root /home/user/data/caltech20 --all
 ```
 
-The script produces under `outputs/`
+This command trains and evaluates **all 4 × 3 feature–classifier combinations**.
 
-* `features/*.npy` ‑ cached image descriptors  
-* `models/*` ‑ trained classifiers  
-* `reports/confusion_*png` – 12 confusion matrices  
-* `reports/retrieval_*json` – retrieval metrics (top‑k & mAP)
+Generated outputs under `outputs/`:
+- `features/*.npy` — cached feature descriptors  
+- `models/` — trained classifiers  
+- `reports/confusion_*.png` — confusion matrices  
+- `reports/retrieval_*.json` — image retrieval metrics  
 
-### Single experiment
+---
+
+### Run a single experiment
 
 ```bash
-python src/main.py --root /path/to/caltech20 --feature model_name1 --classifier model_name2
-
-ex.
-python src/main.py --root /home/cvlab-dgx/project/seungjun/cv/caltech20/caltech20 --feature bow_sp --classifier svm
+python src/main.py --root /path/to/caltech20 --feature FEATURE --classifier CLASSIFIER
+```
+Example:
+```bash
+python src/main.py --root /home/user/data/caltech20 --feature bow_sp --classifier svm
 ```
 
-Available options
+#### Available options
 
-| `--feature`   | `bow`, `bow_sp`, `vgg13`, `vgg19` |
-|---------------|-----------------------------------|
-| `--classifier`| `svm`, `rf`, `fc`                 |
+**Feature**
 
+| Option   | Description               |
+|----------|---------------------------|
+| `bow`    | Bag-of-Words (SIFT)       |
+| `bow_sp` | BoW + Spatial Pyramid     |
+| `vgg13`  | VGG-13 deep features      |
+| `vgg19`  | VGG-19 deep features      |
 
-### Image retrieval all experiment
+**Classifier**
+
+| Option | Description              |
+|--------|--------------------------|
+| `svm`  | Linear SVM               |
+| `rf`   | Random Forest            |
+| `fc`   | 2-Layer FC (PyTorch)     |
+
+---
+
+## 4. Image Retrieval Experiments
+
+### Run all retrieval experiments
 
 ```bash
 python src/retrieval.py --all
 ```
 
-### Image retrieval single experiments
+### Run a single retrieval experiment
 
 ```bash
-python src/retrieval.py --feature /path/to/fature.npy --labels /path/to/labels.npy
-
-ex.
-python src/retrieval.py --feature /home/cvlab-dgx/project/seungjun/cv/outputs/features/vgg19_train.npy --labels /home/cvlab-dgx/project/seungjun/cv/outputs/train_labels.npy
+python src/retrieval.py --feature FEATURE.npy --labels LABELS.npy
 ```
-Available options
 
-| `--features`   | `bow_sp_test.npy`, `bow_sp_train.npy`, `bow_test.npy`, `bow_train.npy`, `vgg13_test.npy`, `vgg13_train.npy`, `vgg19_test.npy`, `vgg19_train.npy` |
-| `--labels`   | `test_labels.npy`, `train_labels.npy` |
+Example:
+```bash
+python src/retrieval.py \
+  --feature outputs/features/vgg19_test.npy \
+  --labels outputs/test_labels.npy
+```
 
-It collects:
+### Supported feature files
 
-* **4 retrieval results** (qualitative & quantitative)  
-* **12 confusion matrices** + **mean accuracies**  
-* Comparison table of 4×3 combinations
+- `bow_train.npy`, `bow_test.npy`
+- `bow_sp_train.npy`, `bow_sp_test.npy`
+- `vgg13_train.npy`, `vgg13_test.npy`
+- `vgg19_train.npy`, `vgg19_test.npy`
+
+---
+
+## 📊 Outputs & Analysis
+
+The project produces:
+- Classification accuracies across **12 feature–classifier combinations**
+- **Confusion matrices** for qualitative error analysis
+- **Image retrieval metrics** (Top-k accuracy, mAP)
+- A direct comparison between **handcrafted features** and **deep CNN embeddings**
+
+---
+
+## 🎯 Key Learning Outcomes
+
+- Performance gap between handcrafted features and deep CNN representations
+- Effectiveness of weak geometric encoding via **Spatial Pyramid**
+- Influence of classifier choice on fixed feature representations
+- Practical evaluation of **image retrieval vs. classification**
+- End-to-end experimental design in computer vision
+
+---
+
+## 📌 Notes
+
+- This project is implemented for **educational purposes**.
+- CNN backbones are **not fine-tuned** to ensure fair comparison across methods.
+- Results may vary depending on random seed and hardware configuration.
+
+This repository represents a structured exploration of classical and deep-learning-based image recognition methods within a unified experimental framework.
